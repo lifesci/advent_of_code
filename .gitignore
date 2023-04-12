@@ -53,3 +53,4 @@ dkms.conf
 
 *.swp
 input.txt
+lib/
