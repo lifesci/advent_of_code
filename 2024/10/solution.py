@@ -4,7 +4,7 @@ class Guide:
         self.rows = len(self.grid)
         self.cols = len(self.grid[0])
 
-    def score_trailheads(self):
+    def score_trailheads(self, count_distinct):
         score = 0
         positions = []
         for row_idx, row in enumerate(self.grid):
@@ -34,7 +34,8 @@ class Guide:
                         and self.grid[row][col] == val + 1
                     ):
                         active.append((row, col))
-                        seen.add((row, col))
+                        if not count_distinct:
+                            seen.add((row, col))
 
         return score
 
@@ -46,4 +47,5 @@ with open("input") as f:
         grid.append([int(char) for char in raw_line.strip()])
 
 guide = Guide(grid)
-print(guide.score_trailheads())
+print(guide.score_trailheads(False))
+print(guide.score_trailheads(True))
