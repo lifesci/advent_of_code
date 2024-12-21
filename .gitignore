@@ -52,5 +52,5 @@ Mkfile.old
 dkms.conf
 
 *.swp
-input*
+*input*
 lib/
