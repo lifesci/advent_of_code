@@ -1,82 +1,75 @@
 class Disk:
-    def __init__(self, head, tail):
-        self.head = head
-        self.tail = tail
+    def __init__(self, data):
+        self.data = data
+
+    def checksum(self):
+        total = 0
+        pos = 0
+        for segment in self.data:
+            for _ in range(segment.size):
+                if segment.value is not None:
+                    total += segment.value*pos
+                pos += 1
+        return total
 
     def defrag(self):
-        tail = self.tail
-        while tail:
-            next_tail = tail.parent
+        tail_idx = len(self.data) - 1
+        while tail_idx > 0:
+            tail = self.data[tail_idx]
             if tail.value is None or tail.moved:
-                pass
+                tail_idx -= 1
             else:
-                head = self.head
-                while head and head != tail:
-                    if head.value is not None:
-                        head = head.child
-                    elif head.size < tail.size:
-                        head = head.child
+                head_idx = 0
+                offset = 0
+                while head_idx < tail_idx:
+                    head = self.data[head_idx]
+                    if (
+                        head.value is not None
+                        or head.size < tail.size
+                    ):
+                        head_idx += 1
                     else:
-                        next_tail = self._swap(head, tail)
+                        offset = self._swap(head_idx, tail_idx)
                         break
-            tail.moved = True
-            tail = next_tail
+                tail_idx += offset - 1
 
-    @staticmethod
-    def _swap(head, tail):
-        new_node_size = head.size - tail.size
-        new_node = None
-        if new_node_size:
-            new_node = Segment(new_node_size, None, tail)
-
-        old_tail_parent = tail.parent
-        old_tail_child = tail.child
-
-        tail.parent = head.parent
-        if head.parent:
-            head.parent.child = tail
-
-        if new_node is None:
-            tail.child = head.child
-            if head.child:
-                head.child.parent = tail
+    def _swap(self, head_idx, tail_idx):
+        head = self.data[head_idx]
+        tail = self.data[tail_idx]
+        residual_size = head.size - tail.size
+        offset = 0
+        if residual_size > 0:
+            offset = 1
+            head.size = tail.size
+            self.data[head_idx] = tail
+            self.data[tail_idx] = head
+            self.data = (
+                self.data[:head_idx + 1]
+                + [Segment(residual_size, None)]
+                + self.data[head_idx + 1:]
+            )
         else:
-            tail.child = new_node
-            new_node.child = head.child
-            if head.child:
-                head.child.parent = new_node
+            self.data[head_idx] = tail
+            self.data[tail_idx] = head
 
-        head.size = tail.size
-        head.parent = old_tail_parent
-        head.child = old_tail_child
-        if old_tail_parent:
-            old_tail_parent.child = head
-        if old_tail_child:
-            old_tail_child.parent = head
-
-        return head.parent
+        return offset
 
     def print(self):
-        cur_segment = self.head
-        while cur_segment:
-            cur_segment.print()
-            cur_segment = cur_segment.child
+        for segment in self.data:
+            segment.print()
 
     def pretty_print(self):
         out = ""
-        cur_segment = self.head
-        while cur_segment:
-            char = "." if cur_segment.value is None else str(cur_segment.value)
-            out += char*cur_segment.size
-            cur_segment = cur_segment.child
+        for segment in self.data:
+            char = "." if segment.value is None else str(segment.value)
+            out += char*segment.size
         print(out)
 
     @classmethod
     def from_str(cls, string):
+        data = []
         is_file = True
         file_id = 0
-        tail = None
-        head = None
         for char in string:
             size = int(char)
             value = None
@@ -84,31 +77,24 @@ class Disk:
                 value = file_id
                 file_id += 1
             is_file = not is_file
-            segment = Segment(size, value, tail)
-            if tail is not None:
-                tail.set_child(segment)
-            tail = segment
-            if head is None:
-                head = segment
-        return cls(head, tail)
+            segment = Segment(size, value)
+            data.append(segment)
+        return cls(data)
 
 class Segment:
-    def __init__(self, size, value, parent):
+    def __init__(self, size, value):
         self.size = size
         self.value = value
-        self.parent = parent
         self.child = None
         self.moved = False
-
-    def set_child(self, child):
-        self.child = child
 
     def print(self):
         print(f"Size: {self.size}; Value: {self.value}; Moved: {self.moved}")
 
-with open("test_input") as f:
+with open("input") as f:
     raw_input = f.read()
 
 disk = Disk.from_str(raw_input.strip())
 disk.defrag()
+print(disk.checksum())
 
