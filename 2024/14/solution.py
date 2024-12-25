@@ -28,6 +28,39 @@ class Robot:
 def simulate(x_max, y_max, robots, steps):
     return [r.move(x_max, y_max, steps) for r in robots]
 
+def print_grid(x_max, y_max, robots):
+    counts = {}
+    for r in robots:
+        pos = (r.y, r.x)
+        counts.setdefault(pos, 0)
+        counts[pos] += 1
+
+    for row in range(y_max):
+        row_str = ""
+        for col in range(x_max):
+            key = (row, col)
+            if key in counts:
+                row_str += '#'
+            else:
+                row_str += '.'
+        print(row_str)
+
+    print()
+    print()
+
+def simulate_and_check_tree(x_max, y_max, robots):
+    steps = 0
+    min_score = float("inf")
+    while True:
+        cur_score = score(x_max, y_max, robots, 0)
+        min_score = min(min_score, cur_score)
+        if min_score == cur_score:
+            print(min_score, steps)
+            print_grid(x_max, y_max, robots)
+        robots = simulate(x_max, y_max, robots, 1)
+        steps += 1
+    return steps
+
 def score(x_max, y_max, robots, steps):
     updated_robots = simulate(x_max, y_max, robots, steps)
     counts = [0]*5
@@ -41,7 +74,17 @@ def score(x_max, y_max, robots, steps):
 
 robots = []
 
-with open('input') as f:
+TEST = False
+if TEST:
+    FILENAME = 'test_input'
+    X_MAX = 11
+    Y_MAX = 7
+else:
+    FILENAME = 'input'
+    X_MAX = 101
+    Y_MAX = 103
+
+with open(FILENAME) as f:
     for raw_line in f:
         raw_pos, raw_vel = raw_line.strip().split(' ')
         raw_x, raw_y = raw_pos.split('=')[1].split(',')
@@ -52,5 +95,7 @@ with open('input') as f:
         dy = int(raw_dy)
         robots.append(Robot(x, y, dx, dy))
 
-print(score(101, 103, robots, 100))
+
+print(score(X_MAX, Y_MAX, robots, 100))
+print(simulate_and_check_tree(X_MAX, Y_MAX, robots))
 
